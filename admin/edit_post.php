@@ -16,10 +16,10 @@ if (!defined('POST_PAGE_PART')) {
 //if nonces not match
 if (_verify_nonces() !== true) {
     echo _verify_nonces();
-} elseif (!isset($_GET['post_id']) || !_is_post($_GET['post_id']) || $_GET['post_id'] == '' ) {
-        echo "Post not exists";
-} else{
- 
+} elseif (!isset($_GET['post_id']) || !_is_post($_GET['post_id']) || $_GET['post_id'] == '') {
+    echo "Post not exists";
+} elseif( isset($_GET['post_id']) ) {
+
     ///adding existing data to the post field
     if (isset($_GET['post_id'])) {
         $post_id = isset($_POST['id']) ?  $_POST['id'] : $_GET['post_id'];
@@ -38,14 +38,14 @@ if (_verify_nonces() !== true) {
                 $ex_post_tag = unserialize($post['post_tag']);
                 $ex_post_comment = $post['post_comment_count'];
                 $ex_post_status = $post['post_status'];
-                _print_r( $post );
+                // _print_r($post);
             } else {
                 exit;
             }
         }
     }
     $post_publish_option = _get_post_publish_options();
-    
+
     if (isset($_POST['update_post'])) {
         $post_title = $_POST['post_title'];
         $post_category = $_POST['post_category'];
@@ -61,7 +61,7 @@ if (_verify_nonces() !== true) {
         $post_error = [];
         $post_error_massage = "This field is empty or something went wrong please try again";
         // print_r($post_data_required);
-    
+
         ///check if required data is empty or not
         ///if empty add field name to error array
         foreach ($post_data_required  as $key => $required) {
@@ -69,11 +69,11 @@ if (_verify_nonces() !== true) {
                 $post_error[] = $key;
             }
         }
-    
+
         //check the value of category coming from the post if it's there in database
         if (!_in_category($post_category)) $post_error[] = 'post_category';
         // _print_r($post_error);
-    
+
         ///post tags check
         if (!empty($post_tag)) {
             //if comma is in the string
@@ -84,7 +84,7 @@ if (_verify_nonces() !== true) {
                 $separate_post_tag = serialize($separate_post_tag);
             }
         }
-    
+
         // _print_r($post_image);
         ///post image check 
         if ($_FILES['post_image']['size'] !== 0 && empty($post_error)) {
@@ -138,13 +138,12 @@ if (_verify_nonces() !== true) {
         }
         if (empty($post_error)) {
             $post_status = in_array($post_status, $post_publish_option) ? $post_status : $post_publish_option[0];
-            if ($post_image['size'] == 0 && ( isset( $ex_post_image ) )) $post_image_name = $ex_post_image;
-            else $post_image_name = '';
+            if ($post_image['size'] == 0) $post_image_name = $ex_post_image;
             $post_db_query = "UPDATE posts SET post_category_id = ?, post_title = ?, post_author = ?, post_date = ?, post_image = ?, post_content = ?, post_tag = ?, post_status = ? 
             WHERE post_id = ?";
             $stmt = $db->stmt_init();
             if ($stmt->prepare($post_db_query)) {
-                $stmt->bind_param('isssssssi', $post_category, $post_title, $post_author, $post_date, $post_image_name, $post_content, $separate_post_tag, $post_status, $_GET['post_id']);
+                $stmt->bind_param('isssssssi', $post_category, $post_title, $post_author, $post_date, $post_image_name, $post_content, $separate_post_tag, $post_status, $ex_post_id);
                 if ($stmt->execute()) {
                     $post_message = "Post added sucessfully";
                     $post_location = $site_url . "admin/posts.php?source=edit_post&post_id={$ex_post_id}&nonces=$nonces";
@@ -157,33 +156,7 @@ if (_verify_nonces() !== true) {
             }
         }
     }
-    
-    ///adding existing data to the post field
-    // if (isset($_POST['update_post'])) {
-    //     $post_id = isset($_POST['id']) ?  $_POST['id'] : $_GET['post_id'];
-    //     $nonces = _create_nonces();
-    //     $get_query = "SELECT * FROM posts WHERE post_id = '$post_id'";
-    //     $result =  mysqli_query($db, $get_query);
-    //     while ($post = $result->fetch_assoc()) {
-    //         if ($post !== false) {
-    //             $ex_post_id = $post['post_id'];
-    //             $ex_post_category = $post['post_category_id'];
-    //             $ex_post_title = $post['post_title'];
-    //             $ex_post_author = $post['post_author'];
-    //             $ex_post_date = $post['post_date'];
-    //             $ex_post_image = $post['post_image'];
-    //             $ex_post_content = $post['post_content'];
-    //             $ex_post_tag = unserialize($post['post_tag']);
-    //             $ex_post_comment = $post['post_comment_count'];
-    //             $ex_post_status = $post['post_status'];
-    //             $post_publish_option = _get_post_publish_options();
-    //             _print_r( $post );
-    //         } else {
-    //             exit;
-    //         }
-    //     }
-    // }
-    ?>
+?>
     <?php if (isset($post_message)) { ?>
         <div class="alert alert-success" role="alert">
             <?= $post_message ?>
@@ -272,7 +245,9 @@ if (_verify_nonces() !== true) {
         </div>
         <input class="btn btn-primary" name="update_post" type="submit" value="Update Post">
     </form>
-<?php } ?>
+<?php 
+} else{
+    echo "unkown error";
+}
 
-
-
+?>
