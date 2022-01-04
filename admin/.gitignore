@@ -1,1 +1,2 @@
-./upload/images/*.jpg
+# upload images
+upload/*

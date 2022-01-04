@@ -12,6 +12,25 @@ if (!defined('POST_PAGE_PART')) {
     }
     exit;
 } ?>
+
+<?php
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+if (isset($_SESSION['delete_success'])) { ?>
+    <div class="alert alert-success" role="alert">
+        <?= $_SESSION['delete_success'] ?>
+    </div>
+<?php
+    unset($_SESSION['delete_success']);
+}
+if (isset($_SESSION['delete_error'])) { ?>
+    <div class="alert alert-danger" role="alert">
+        <?= $_SESSION['delete_error'] ?>
+    </div>
+<?php
+    unset($_SESSION['delete_error']);
+} ?>
 <div class="">
     <table class="table table-hover">
         <thead>
@@ -33,7 +52,7 @@ if (!defined('POST_PAGE_PART')) {
             $posts = _get_all_posts();
             if ($posts == true) {
                 $nonces = _create_nonces();
-                foreach($posts as $post) {
+                foreach ($posts as $post) {
                     $post_id = $post['post_id'];
                     if ($post['post_category_id'] != '') {
                         $post_category = _get_category($post['post_category_id']);
@@ -60,16 +79,17 @@ if (!defined('POST_PAGE_PART')) {
                         <td><?php if (is_array($post_tag)) {
                                 $tags = '';
                                 foreach ($post_tag as $tag) {
-                                  $tags.= $tag . ' ';
+                                    $tags .= $tag . ' ';
                                 }
                                 echo trim(htmlentities($tags, ENT_QUOTES));
                             } else {
                                 echo trim(htmlentities($post_tag, ENT_QUOTES));
-                            }?></td>
+                            } ?></td>
                         <td><?= trim(htmlentities($post_comment, ENT_QUOTES)) ?></td>
                         <td><?= trim(htmlentities($post_date, ENT_QUOTES)) ?></td>
-                        <td><a href="<?= $current_page ?>?source=edit_post&post_id=<?= trim(htmlentities($post_id, ENT_QUOTES)) ?>&nonces=<?= $nonces ?>">Edit</a> &nbsp; 
-                        <a href="<?= $current_page ?>?source=delete_post&post_id=<?= trim(htmlentities($post_id, ENT_QUOTES)) ?>&nonces=<?= $nonces ?>">Delete</a></td>
+                        <td><a href="<?= $current_page ?>?source=edit_post&post_id=<?= trim(htmlentities($post_id, ENT_QUOTES)) ?>&nonces=<?= $nonces ?>">Edit</a> &nbsp;
+                            <a href="<?= $current_page ?>?source=delete_post&post_id=<?= trim(htmlentities($post_id, ENT_QUOTES)) ?>&nonces=<?= $nonces ?>">Delete</a>
+                        </td>
                     </tr>
             <?php     }
             }

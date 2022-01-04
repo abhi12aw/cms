@@ -19,7 +19,7 @@ if (_verify_nonces() !== true) {
 } elseif (!isset($_GET['post_id']) || !_is_post($_GET['post_id']) || $_GET['post_id'] == '') {
     echo "Post not exists";
 } elseif( isset($_GET['post_id']) ) {
-
+    error_reporting(E_ALL); ini_set('display_errors', '1');
     ///adding existing data to the post field
     if (isset($_GET['post_id'])) {
         $post_id = isset($_POST['id']) ?  $_POST['id'] : $_GET['post_id'];
@@ -61,7 +61,7 @@ if (_verify_nonces() !== true) {
         $post_error = [];
         $post_error_massage = "This field is empty or something went wrong please try again";
         // print_r($post_data_required);
-
+        // _print_r( $_POST );
         ///check if required data is empty or not
         ///if empty add field name to error array
         foreach ($post_data_required  as $key => $required) {
@@ -145,9 +145,14 @@ if (_verify_nonces() !== true) {
             if ($stmt->prepare($post_db_query)) {
                 $stmt->bind_param('isssssssi', $post_category, $post_title, $post_author, $post_date, $post_image_name, $post_content, $separate_post_tag, $post_status, $ex_post_id);
                 if ($stmt->execute()) {
-                    $post_message = "Post added sucessfully";
+                    $post_message = "Post updated sucessfully";
+                    if( session_status() !== PHP_SESSION_ACTIVE) {
+                        session_start();
+                    }
+                    $_SESSION['update_post'] = $post_message;
                     $post_location = $site_url . "admin/posts.php?source=edit_post&post_id={$ex_post_id}&nonces=$nonces";
                     header("Location: $post_location");
+                    exit;
                 } else {
                     echo $stmt->error;
                 }
@@ -157,20 +162,27 @@ if (_verify_nonces() !== true) {
         }
     }
 ?>
-    <?php if (isset($post_message)) { ?>
-        <div class="alert alert-success" role="alert">
-            <?= $post_message ?>
-        </div>
-    <?php } ?>
+    <?php 
+     if( session_status() !== PHP_SESSION_ACTIVE) {
+        session_start();
+    }
+   if( isset( $_SESSION['update_post'] ) )  { ?>
+    <div class="alert alert-success" role="alert">
+      <?= $_SESSION['update_post'] ?>
+    </div>
+    <?php
+       unset( $_SESSION['update_post'] );
+    }?>
     <form action="<?= $site_url . "admin/posts.php?source=edit_post&post_id={$ex_post_id}&nonces=$nonces" ?>" method="post" enctype="multipart/form-data">
-        <input type="hidden" name="id" value="<?= $_GET['post_id'] ?>">
         <div class="form-group">
             <label for="post_title">Post Title</label>
             <?php
             if (isset($post_error) && in_array('post_title', $post_error)) { ?>
                 <div class="alert alert-danger" role="alert"><?= $post_error_massage ?></div>
             <?php } ?>
-            <input class="form-control" type="text" name="post_title" id="post_title" <?php if (isset($ex_post_title)) echo 'value="' . trim(htmlentities($ex_post_title, ENT_QUOTES)) . '"' ?>>
+            <input class="form-control" type="text" name="post_title" id="post_title" <?php
+             $current_post_title = isset( $post_title ) ? $post_title : $ex_post_title;
+             echo 'value="' . trim(htmlentities($current_post_title, ENT_QUOTES)) . '"' ?>>
         </div>
         <div class="form-group">
             <label for="post_category">Post Category</label>
@@ -180,9 +192,10 @@ if (_verify_nonces() !== true) {
             <?php } ?>
             <select class="form-control" name="post_category" id="post_category">
                 <?php
+                $current_post_category = isset( $post_category ) ? $post_category : $ex_post_category;
                 $categories = _get_all_category();
                 foreach ($categories as $category) {
-                    if (isset($ex_post_category) && $category['cat_id'] == $post_category) {
+                    if (isset($ex_post_category) && $category['cat_id'] == $current_post_category) {
                         $if_category_selected = 'selected';
                     } else $if_category_selected = '';
                 ?>
@@ -196,7 +209,9 @@ if (_verify_nonces() !== true) {
             if (isset($post_error) && in_array('post_author', $post_error)) { ?>
                 <div class="alert alert-danger" role="alert"><?= $post_error_massage ?></div>
             <?php } ?>
-            <input class="form-control" name="post_author" id="post_author" type="text" <?php if (isset($ex_post_author)) echo 'value="' . trim(htmlentities($ex_post_author, ENT_QUOTES)) . '"' ?>>
+            <input class="form-control" name="post_author" id="post_author" type="text" <?php 
+                $current_post_author = isset( $post_author ) ? $post_author : $ex_post_author;
+                echo 'value="' . trim(htmlentities($current_post_author, ENT_QUOTES)) . '"' ?>>
         </div>
         <div class="form-group">
             <?php
@@ -216,7 +231,9 @@ if (_verify_nonces() !== true) {
                 <div class="alert alert-danger" role="alert"><?= $post_error_massage ?></div>
             <?php } ?>
             <label for="post_content">Content</label>
-            <textarea class="form-control" name="post_content" id="post_content"><?php if (isset($ex_post_content)) echo  trim(htmlentities($ex_post_content, ENT_QUOTES)) ?></textarea>
+            <textarea class="form-control" name="post_content" id="post_content"><?php 
+            $current_post_content = isset( $post_content ) ? $post_content : $ex_post_content;
+            echo  trim(htmlentities($current_post_content, ENT_QUOTES)) ?></textarea>
         </div>
         <div class="form-group">
             <label for="post_tag">Post Tag (seprate tags with whitespace)</label>
@@ -224,22 +241,27 @@ if (_verify_nonces() !== true) {
             if (isset($post_error) && array_key_exists('post_tag', $post_error)) { ?>
                 <div class="alert alert-danger" role="alert"><?= $post_error['post_tag'] ?></div>
             <?php } ?>
-            <input class="form-control" type="text" name="post_tag" id="post_tag" <?php if (is_array($ex_post_tag)) {
-                                                                                        $tags = '';
-                                                                                        foreach ($ex_post_tag as $tag) {
-                                                                                            $tags .= $tag . ' ';
-                                                                                        }
-                                                                                        echo 'value="' . trim(htmlentities($tags, ENT_QUOTES)) . '"';
-                                                                                    } else {
-                                                                                        echo trim(htmlentities($ex_post_tag, ENT_QUOTES));
-                                                                                    } ?>>
+            <input class="form-control" type="text" name="post_tag" id="post_tag" 
+            <?php 
+            $current_post_tag = isset( $post_tag ) ? $post_tag : $ex_post_tag;
+            if (is_array($current_post_tag)) {
+            $tags = '';
+            foreach ($current_post_tag as $tag) {
+              $tags .= $tag . ' ';
+            }
+            echo 'value="' . trim(htmlentities($tags, ENT_QUOTES)) . '"';
+            } else {
+               echo 'value="' . trim(htmlentities($current_post_tag, ENT_QUOTES)) . '"';
+            } ?>>
         </div>
         <div class="form-group">
             <label for="post_status">Post Status</label>
             <select class="form-control" name="post_status" id="post_status" type="text">
                 <?php
                 foreach ($post_publish_option as $option) { ?>
-                    <option value="<?= $option ?>" <?php if (isset($ex_post_status) && $ex_post_status == $option) echo "selected" ?>><?= ucfirst($option) ?></option>
+                    <option value="<?= $option ?>" <?php 
+            $current_post_status = isset( $post_status ) ? $post_status : $ex_post_status;
+                    if (isset($current_post_status) && $current_post_status == $option) echo "selected" ?>><?= ucfirst($option) ?></option>
                 <?php } ?>
             </select>
         </div>
@@ -249,5 +271,4 @@ if (_verify_nonces() !== true) {
 } else{
     echo "unkown error";
 }
-
 ?>
