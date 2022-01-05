@@ -1,10 +1,7 @@
 <?php include_once 'includes/header.php' ?>
 
-<!-- Navigation -->
 <?php include_once 'includes/nav.php' ?>
 
-
-<!-- Page Content -->
 <div class="container">
 
     <div class="row">
@@ -13,17 +10,16 @@
         <div class="col-md-8">
 
             <h1 class="page-header">
-                Page Heading
-                <small>Secondary Text</small>
+                Categories page
             </h1>
 
             <!-- First Blog Post -->
             <?php
-            if (empty($_GET['search'])) {
+            if (empty($_GET['cat_id'])) {
                 $query = "SELECT * FROM posts";
-            } else if (!empty($_GET['search'])) {
-                $search_query = $_GET['search'];
-                $query = "SELECT * FROM posts WHERE post_tag LIKE '%$search_query%'";
+            } else if (!empty($_GET['cat_id'])) {
+                $category_id = $_GET['cat_id'];
+                $query = "SELECT * FROM posts WHERE post_category_id = $category_id";
             }
             $posts_result = mysqli_query($db, $query);
             if (!$posts_result) {
@@ -39,6 +35,7 @@
                         $post_author = $row['post_author'];
                         $post_date = $row['post_date'];
                         $post_content = $row['post_content'];
+                        $post_excerpt = substr($row['post_content'], 0, 150) . '.....';
                         $post_image = $row['post_image'];
                         $post_tag = $row['post_tag'];
                         $post_comment = $row['post_comment_count'];
@@ -56,7 +53,7 @@
                         <hr>
                         <a href="<?= $post_premalink ?>"><img style="width: 100%; object-fit: cover;" class="img-responsive" src="<?= trim(htmlentities($upload_image_url . $post_image, ENT_QUOTES)) ?>" alt="image"></a>
                         <hr>
-                        <p><?= trim(htmlentities($post_content, ENT_QUOTES)) ?></p>
+                        <p><?= trim(htmlentities($post_excerpt, ENT_QUOTES)) ?></p>
                         <a class="btn btn-primary" href="<?= $post_premalink ?>">Read More <span class="glyphicon glyphicon-chevron-right"></span></a>
 
                         <hr>
@@ -75,6 +72,5 @@
     <!-- /.row -->
 
     <hr>
-
 
     <?php include_once 'includes/footer.php' ?>

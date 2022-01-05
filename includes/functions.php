@@ -32,11 +32,13 @@ _init();
  **/
 function _get_all_category()
 {
-    global $db;
+    global $db, $site_url;
     $query = "SELECT * FROM categories";
     $result = mysqli_query($db, $query);
     $categories = [];
     while ($row = mysqli_fetch_assoc($result)) {
+        $category_permalink = $site_url . "categories.php?cat_id={$row['cat_id']}";
+        $row['cat_permalink'] = $category_permalink;
         $categories[] = $row;
     }
     return $categories;
@@ -257,6 +259,7 @@ function _get_all_posts()
         while ($row = mysqli_fetch_assoc($post_result)) {
             $post_permalink = $site_url . 'post.php?post_id=' . $row['post_id'];
             $row['post_permalink'] = $post_permalink;
+            $row['post_excerpt'] = substr($row['post_content'], 0, 150) . '.....';
             $posts[] = $row;
         }
         return $posts;
@@ -316,6 +319,7 @@ function _get_post(int $id = null, int $max_post = 10)
                 }
                 $post_permalink = $site_url . 'post.php?post_id=' . $row['post_id'];
                 $row['post_permalink'] = $post_permalink;
+                $row['post_excerpt'] = substr($row['post_content'], 0, 150) . '.....';
                 $posts[] = $row;
             } else {
                 break;

@@ -20,7 +20,7 @@
                 $categories = _get_all_category();
                 foreach ($categories as $category) { ?>
                     <li>
-                        <a href="#"><?= $category['cat_title'] ?></a>
+                        <a href="<?= $category['cat_permalink'] ?>"><?= $category['cat_title'] ?></a>
                     </li>
                 <?php
                 }
