@@ -11,7 +11,7 @@
 
         <!-- Blog Entries Column -->
         <div class="col-md-8">
-            
+
             <h1 class="page-header">
                 Page Heading
                 <small>Secondary Text</small>
@@ -34,6 +34,7 @@
                     echo "<h1>No Post Found</h2>";
                 } else if ($counter >= 1) {
                     while ($row = mysqli_fetch_assoc($posts_result)) {
+                        $post_id = $row['post_id'];
                         $post_title = $row['post_title'];
                         $post_author = $row['post_author'];
                         $post_date = $row['post_date'];
@@ -42,19 +43,20 @@
                         $post_tag = $row['post_tag'];
                         $post_comment = $row['post_comment_count'];
                         $post_status =  $row['post_status'];
+                        $post_premalink = $site_url . "post.php?post_id=$post_id";
                         $counter++;
             ?>
                         <h2>
-                            <a href="#"><?= $post_title ?></a>
+                            <a href="<?= $post_premalink ?>"><?= trim(htmlentities($post_title, ENT_QUOTES))  ?></a>
                         </h2>
                         <p class="lead">
-                            by <a href="#"><?= $post_author ?></a>
+                            by <io><?= $post_author ?></io>
                         </p>
-                        <p><span class="glyphicon glyphicon-time"></span> Posted on <?= $post_date ?></p>
+                        <p><span class="glyphicon glyphicon-time"></span> Posted on <?= trim(htmlentities($post_date, ENT_QUOTES)) ?></p>
                         <hr>
-                        <img style="width: 100%; object-fit: cover;" class="img-responsive" src="<?= $upload_image_url . trim(htmlentities($post_image, ENT_QUOTES)) ?>" alt="image">
+                        <img style="width: 100%; object-fit: cover;" class="img-responsive" src="<?= trim(htmlentities($upload_image_url . $post_image, ENT_QUOTES)) ?>" alt="image">
                         <hr>
-                        <p><?= $post_content ?></p>
+                        <p><?= trim(htmlentities($post_content, ENT_QUOTES)) ?></p>
                         <a class="btn btn-primary" href="#">Read More <span class="glyphicon glyphicon-chevron-right"></span></a>
 
                         <hr>

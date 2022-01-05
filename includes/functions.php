@@ -216,7 +216,7 @@ function change_file_name_if_exist(string $path, string $filename)
 
 function _create_nonces()
 {
-    if( session_status() !== PHP_SESSION_ACTIVE) {
+    if (session_status() !== PHP_SESSION_ACTIVE) {
         session_start();
     }
     $number  = rand(10, 10);
@@ -227,7 +227,7 @@ function _create_nonces()
 
 function _verify_nonces()
 {
-    if( session_status() !== PHP_SESSION_ACTIVE) {
+    if (session_status() !== PHP_SESSION_ACTIVE) {
         session_start();
     }
     if (isset($_GET['nonces']) && isset($_SESSION['nonces'])) {
@@ -241,62 +241,94 @@ function _verify_nonces()
     } else {
         return "unauthorized";
     }
-    return ;
+    return;
 }
 
 /**
  * @return array of all posts
  */
-function _get_all_posts()  {
-    global $db;
+function _get_all_posts()
+{
+    global $db, $site_url;
     $posts = [];
     $post_query = "SELECT * FROM posts";
     $post_result = mysqli_query($db, $post_query);
-    if($post_result) {
+    if ($post_result) {
         while ($row = mysqli_fetch_assoc($post_result)) {
+            $post_permalink = $site_url . 'post.php?post_id=' . $row['post_id'];
+            $row['post_permalink'] = $post_permalink;
             $posts[] = $row;
         }
         return $posts;
     } else {
-        return mysqli_error( $db );
+        return mysqli_error($db);
     }
-    
 }
 
 /**
  * check to see if the post id is avalible on database
  * @param int $id of the post
  */
-function _is_post( int $id )  {
+function _is_post(int $id)
+{
     $posts = _get_all_posts();
     $all_id = [];
-    foreach( $posts as $post )  {
-      $all_id[] = $post['post_id'];
+    foreach ($posts as $post) {
+        $all_id[] = $post['post_id'];
     }
-    return in_array( $id, $all_id );
- }
+    return in_array($id, $all_id);
+}
 
 /**
- * @return array of post data
+ * @param int $id if supplied return specific post
+ * @param int $max_post maxmimum post to be displayed default is 10
+ * @return array of post data which use in loop
  */
-function _get_post( $id )  {
-    if( _is_post( $id ) )  {
-        global $db;
+function _get_post(int $id = null, int $max_post = 10)
+{
+    global $db, $site_url;
+    $id_true = false;
+    if (isset($id) && _is_post($id)) {
+        $id_true = true;
         $query = "SELECT * FROM posts WHERE post_id = ?";
-        $stmt = $db->stmt_init();
-        if($stmt->prepare( $query ))  {
-            $stmt->bind_param( 'i', $id );
-            $stmt->execute();
-            $result = $stmt->get_result();
-            while( $post = $result->fetch_assoc() )  {
-                return $post;
-            }
+    } else {
+        $query = "SELECT * FROM posts";
+    }
+    $stmt = $db->stmt_init();
+    if ($stmt->prepare($query)) {
+        if ($id_true) {
+            $stmt->bind_param('i', $id);
         }
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if (!$result) return false;
+        $posts = [];
+        $i = 0;
+        while ($row = $result->fetch_assoc()) {
+            if ($i < $max_post) {
+                if ($row['post_tag'] != '') {
+                    $row['post_tag'] = unserialize($row['post_tag']);
+                    $tags = '';
+                    foreach ($row['post_tag'] as $tag) {
+                        $tags .= $tag . ' ';
+                    }
+                    $row['post_tag'] = $tags;
+                }
+                $post_permalink = $site_url . 'post.php?post_id=' . $row['post_id'];
+                $row['post_permalink'] = $post_permalink;
+                $posts[] = $row;
+            } else {
+                break;
+            }
+            $i++;
+        }
+        return $posts;
     }
     return false;
 }
 
-function _get_post_publish_options()  {
+function _get_post_publish_options()
+{
     $post_publish_option = ['draft', 'published'];
     return $post_publish_option;
 }

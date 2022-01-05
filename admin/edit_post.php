@@ -19,7 +19,6 @@ if (_verify_nonces() !== true) {
 } elseif (!isset($_GET['post_id']) || !_is_post($_GET['post_id']) || $_GET['post_id'] == '') {
     echo "Post not exists";
 } elseif( isset($_GET['post_id']) ) {
-    error_reporting(E_ALL); ini_set('display_errors', '1');
     ///adding existing data to the post field
     if (isset($_GET['post_id'])) {
         $post_id = isset($_POST['id']) ?  $_POST['id'] : $_GET['post_id'];
