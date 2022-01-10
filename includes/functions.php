@@ -2,7 +2,7 @@
 
 function _init()
 {
-    global  $site_url, $site_dir, $current_url, $image_folder, $upload_image_url, $upload_image_dir, $current_page, $page_title;
+    global  $site_url, $site_dir, $current_url, $image_folder, $upload_image_url, $upload_image_dir, $current_page, $page_title, $cms_image_folder_url;
     $site_url = 'http://localhost/cms/';
     $site_folder_name = explode('/', $_SERVER['SCRIPT_NAME']);
     $site_dir = $_SERVER['DOCUMENT_ROOT'] . '/' . $site_folder_name[1] . '/';
@@ -11,6 +11,7 @@ function _init()
     $upload_image_url = $site_url . $image_folder;
     $upload_image_dir = $site_dir . $image_folder;
     $current_page = _current_page();
+    $cms_image_folder_url = $site_url . "images/";
     date_default_timezone_set('UTC');
     if (isset($_GET['source']) && !empty($_GET['source'])) {
         $page_source_id = $_GET['source'];
@@ -26,6 +27,11 @@ function _init()
     } else $page_title = '<no title>';
 }
 _init();
+
+function sanitize_op( $value )  {
+    return trim(htmlentities($value, ENT_QUOTES));
+}
+
 
 /** 
  * @return array return multidimesion array of all categories
@@ -227,6 +233,10 @@ function _create_nonces()
     return $hash;
 }
 
+/**
+ * verify the nonces
+ * @return true|error message 
+ */
 function _verify_nonces()
 {
     if (session_status() !== PHP_SESSION_ACTIVE) {
@@ -335,4 +345,60 @@ function _get_post_publish_options()
 {
     $post_publish_option = ['draft', 'published'];
     return $post_publish_option;
+}
+
+/**
+ * @param array array of args if given show the comment of the post args post_id, comment_id
+ * @param bool whether we want a approve comments default is true
+ * @return array of comments
+ */
+function _get_comments($args = '', bool $get_approve_comments = true )  {
+    global $db;
+    $comments = [];
+    $query = "SELECT * FROM comments";
+    if( isset( $args ) && !empty( $args ) )  {
+        if( !empty($args['comment_id']) || !empty($args['post_id']) )  {
+            $query .= " WHERE ";
+        }
+        if(!empty($args['comment_id']))  {
+            $query .= " comment_id = ? ";
+            if( !empty($args['comment_id']) && !empty($args['post_id']) )  {
+                $query .= " AND ";
+            }
+        }
+        if(!empty($args['post_id']))  {
+            $query .= " comment_post_id = ? ";
+        }
+    }
+    $stmt = $db->stmt_init();
+    $stmt->prepare( $query );
+    if( !empty($args['comment_id']) && !empty($args['post_id']) )  {
+        $stmt->bind_param('ii', $args['comment_id'], $args['post_id']);
+    } elseif( !empty($args['comment_id'])  )  {
+        $stmt->bind_param('i', $args['comment_id']);
+    } elseif( !empty($args['post_id']) )  {
+        $stmt->bind_param('i', $args['post_id']);
+    }
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while( $row = mysqli_fetch_assoc( $result ) )  {
+      if( $get_approve_comments == true && $row['comment_status'] != 1 )  {
+        continue;
+      }
+      $comments[] = $row;
+    }
+    return $comments; 
+}
+
+/**
+ * @param int $id of the comment
+ * @param true|false whether we want a approve comments default is true
+ * @return true|false if the id is in the database
+ */
+function _is_comment( int $id, $get_approve_comments = true )  {
+   $comment = _get_comments( $id, $get_approve_comments );
+   if( !empty( $comment ) ) {
+       return true;
+   }
+   return false;
 }
