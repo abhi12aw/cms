@@ -402,3 +402,19 @@ function _is_comment( int $id, $get_approve_comments = true )  {
    }
    return false;
 }
+
+/**
+ * this function can update comment count on the post database table
+ * only approve comment are shown in the count
+ * @param int $post_id of the post to be updated
+ * @return void
+ */
+function comment_count_update( int $post_id )  {
+    if( _is_post( $post_id ) )  {
+        global $db;
+        $all_comments = _get_comments( ['post_id' => $post_id], true );
+        $comments_count = count( $all_comments );
+        $query = "UPDATE posts SET post_comment_count = '$comments_count' WHERE post_id = '$post_id'";
+        mysqli_query( $db, $query );
+    }
+}

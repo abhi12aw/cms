@@ -25,7 +25,9 @@ if (_verify_nonces() !== true) {
  $stmt->prepare( $query );
  $stmt->bind_param( 'i', $comment_id );
  if($stmt->execute())  {
-   
+    $current_comment = _get_comments( ['comment_id' => $comment_id], false );
+    $current_comment_post_id = $current_comment[0]['comment_post_id'];
+    comment_count_update( $current_comment_post_id );
  }
  $location = $site_url . "admin/comments.php";
  header( "Location: $location" );
