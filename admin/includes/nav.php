@@ -56,11 +56,11 @@
             <li>
                 <a href="javascript:;" data-toggle="collapse" data-target="#cat"><i class="fa fa-fw fa-arrows-v"></i> Users <i class="fa fa-fw fa-caret-down"></i></a>
                 <ul id="cat" class="collapse">
-                    <li <?php if( $current_page == 'add_user.php' ) echo 'class="active"'; ?>>
-                        <a href="add_user.php">Add User</a>
+                    <li>
+                        <a href="user.php?source=add_user">Add User</a>
                     </li>
-                    <li <?php if( $current_page == 'view_user.php' ) echo 'class="active"'; ?>>
-                        <a href="view_user.php">View User</a>
+                    <li>
+                        <a href="user.php?source=view_users">View User</a>
                     </li>
                 </ul>
             </li>

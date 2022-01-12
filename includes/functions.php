@@ -28,7 +28,8 @@ function _init()
 }
 _init();
 
-function sanitize_op( $value )  {
+function sanitize_op($value)
+{
     return trim(htmlentities($value, ENT_QUOTES));
 }
 
@@ -352,42 +353,43 @@ function _get_post_publish_options()
  * @param bool whether we want a approve comments default is true
  * @return array of comments
  */
-function _get_comments($args = '', bool $get_approve_comments = true )  {
+function _get_comments($args = '', bool $get_approve_comments = true)
+{
     global $db;
     $comments = [];
     $query = "SELECT * FROM comments";
-    if( isset( $args ) && !empty( $args ) )  {
-        if( !empty($args['comment_id']) || !empty($args['post_id']) )  {
+    if (isset($args) && !empty($args)) {
+        if (!empty($args['comment_id']) || !empty($args['post_id'])) {
             $query .= " WHERE ";
         }
-        if(!empty($args['comment_id']))  {
+        if (!empty($args['comment_id'])) {
             $query .= " comment_id = ? ";
-            if( !empty($args['comment_id']) && !empty($args['post_id']) )  {
+            if (!empty($args['comment_id']) && !empty($args['post_id'])) {
                 $query .= " AND ";
             }
         }
-        if(!empty($args['post_id']))  {
+        if (!empty($args['post_id'])) {
             $query .= " comment_post_id = ? ";
         }
     }
     $stmt = $db->stmt_init();
-    $stmt->prepare( $query );
-    if( !empty($args['comment_id']) && !empty($args['post_id']) )  {
+    $stmt->prepare($query);
+    if (!empty($args['comment_id']) && !empty($args['post_id'])) {
         $stmt->bind_param('ii', $args['comment_id'], $args['post_id']);
-    } elseif( !empty($args['comment_id'])  )  {
+    } elseif (!empty($args['comment_id'])) {
         $stmt->bind_param('i', $args['comment_id']);
-    } elseif( !empty($args['post_id']) )  {
+    } elseif (!empty($args['post_id'])) {
         $stmt->bind_param('i', $args['post_id']);
     }
     $stmt->execute();
     $result = $stmt->get_result();
-    while( $row = mysqli_fetch_assoc( $result ) )  {
-      if( $get_approve_comments == true && $row['comment_status'] != 1 )  {
-        continue;
-      }
-      $comments[] = $row;
+    while ($row = mysqli_fetch_assoc($result)) {
+        if ($get_approve_comments == true && $row['comment_status'] != 1) {
+            continue;
+        }
+        $comments[] = $row;
     }
-    return $comments; 
+    return $comments;
 }
 
 /**
@@ -395,12 +397,13 @@ function _get_comments($args = '', bool $get_approve_comments = true )  {
  * @param true|false whether we want a approve comments default is true
  * @return true|false if the id is in the database
  */
-function _is_comment( int $id, $get_approve_comments = true )  {
-   $comment = _get_comments( $id, $get_approve_comments );
-   if( !empty( $comment ) ) {
-       return true;
-   }
-   return false;
+function _is_comment(int $id, $get_approve_comments = true)
+{
+    $comment = _get_comments($id, $get_approve_comments);
+    if (!empty($comment)) {
+        return true;
+    }
+    return false;
 }
 
 /**
@@ -409,12 +412,77 @@ function _is_comment( int $id, $get_approve_comments = true )  {
  * @param int $post_id of the post to be updated
  * @return void
  */
-function comment_count_update( int $post_id )  {
-    if( _is_post( $post_id ) )  {
+function comment_count_update(int $post_id)
+{
+    if (_is_post($post_id)) {
         global $db;
-        $all_comments = _get_comments( ['post_id' => $post_id], true );
-        $comments_count = count( $all_comments );
+        $all_comments = _get_comments(['post_id' => $post_id], true);
+        $comments_count = count($all_comments);
         $query = "UPDATE posts SET post_comment_count = '$comments_count' WHERE post_id = '$post_id'";
-        mysqli_query( $db, $query );
+        mysqli_query($db, $query);
     }
+}
+
+
+/**
+ * get the user
+ * @param int $id if provided get sepecfic user unless all the users
+ * @return array of all the user
+ */
+function _get_users( int $id = null )
+{
+    global $db;
+    $query = "SELECT * FROM users";
+    if( isset( $id ) )  {
+        $query.= " WHERE user_id = $id";
+    }
+    $result = mysqli_query($db, $query);
+    $all_users = [];
+    while ($row = mysqli_fetch_assoc($result)) {
+        $all_users[] = $row;
+    }
+    return $all_users;
+}
+
+
+/**
+ * check to see if username is avalible or not 
+ * @param mixed $username
+ * @return true|false
+ */
+
+function _is_username_available($username)
+{
+    global $db;
+    $query = "SELECT user_name FROM users";
+    $result = mysqli_query($db, $query);
+    $all_username = [];
+    while ($row = mysqli_fetch_row($result)) {
+        $all_username[] = $row;
+    }
+    foreach ($all_username as $user) {
+        if ($user[0] == $username) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * check if the user id avaliable
+ * @param int $id
+ * @return true|false
+ */
+function _is_user(int $id)
+{
+    global $db;
+    $query = "SELECT user_id FROM users";
+    $result = mysqli_query($db, $query);
+    $count = mysqli_num_rows($result);
+    while ($row = mysqli_fetch_row($result)) {
+        if ($row[0] == $id) {
+            return true;
+        }
+    }
+    return false;
 }
