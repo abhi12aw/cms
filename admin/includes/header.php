@@ -2,7 +2,13 @@
 ob_start();
 include_once "../includes/db.php";
 include_once "../includes/functions.php";
-
+_session_start();
+if( _is_logged_in() == false )  {
+    $_SESSION['login_warning'] = true;
+    $location = $site_url . "includes/login.php";
+    header( "Location: $location" );
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">

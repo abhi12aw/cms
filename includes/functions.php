@@ -33,6 +33,15 @@ function sanitize_op($value)
     return trim(htmlentities($value, ENT_QUOTES));
 }
 
+/**
+ * start the session if already not statred
+ * @return void
+ */
+function _session_start()  {
+    if (session_status() != PHP_SESSION_ACTIVE) {
+        session_start();
+    }
+}
 
 /** 
  * @return array return multidimesion array of all categories
@@ -483,6 +492,46 @@ function _is_user(int $id)
         if ($row[0] == $id) {
             return true;
         }
+    }
+    return false;
+}
+
+/**
+ * get the username
+ * @param int $id of the user
+ * @return string|false username or false
+ */
+function _get_username( int $id )  {
+    if( !_is_user( $id ) ) return false;
+    global $db;
+    $query = "SELECT user_name FROM users WHERE user_id = ?";
+    $stmt = $db->stmt_init();
+    $stmt->prepare( $query );
+    $stmt->bind_param( 'i', $id );
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $username = '';
+    while ($row = mysqli_fetch_row($result)) {
+        $username = $row[0];
+    }
+    return $username;
+}
+
+/**
+ * check if logged in 
+ */
+function _is_logged_in()  {
+    if( isset( $_SESSION['login'] ) && $_SESSION['login'] == true )  {
+        return true;
+    }
+    return false;
+}
+
+function _get_current_user_id()  {
+    if( _is_logged_in() )  {
+      if( isset( $_SESSION['user_id'] ) && $_SESSION['user_id'] != '' )  {
+          return $_SESSION['user_id'];
+      }
     }
     return false;
 }

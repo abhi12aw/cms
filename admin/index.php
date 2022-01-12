@@ -11,7 +11,10 @@
             <div class="row">
                 <div class="col-lg-12">
                     <h1 class="page-header">
-                        Welcome John    
+                        <?php 
+                        if( _is_logged_in() )  { ?>
+                         Welcome <?= _get_username( _get_current_user_id() ) ?>
+                       <?php } ?>
                     </h1>
                 </div>
             </div>
