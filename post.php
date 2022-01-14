@@ -37,7 +37,7 @@
                 <img class="img-responsive" src="<?= trim(htmlentities($upload_image_url . $post['post_image'], ENT_QUOTES)) ?>" alt="">
                 <hr>
                 <!-- Post Content -->
-                <p class="lead"><?= trim(htmlentities($post['post_content'], ENT_QUOTES)) ?></p>
+                <p class="lead"><?= html_entity_decode($post['post_content']) ?></p>
                 <hr>
                 <?php if (isset($_GET['post_id']) && $_GET['post_id'] != '') {
                     $post_id =  $_GET['post_id']; ?>

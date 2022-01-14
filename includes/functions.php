@@ -30,7 +30,7 @@ _init();
 
 function sanitize_op($value)
 {
-    return trim(htmlentities($value, ENT_QUOTES));
+    return htmlentities(trim($value), ENT_QUOTES);
 }
 
 /**

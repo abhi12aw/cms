@@ -12,25 +12,20 @@
         <!-- Blog Entries Column -->
         <div class="col-md-8">
 
-            <h1 class="page-header">
-                Page Heading
-                <small>Secondary Text</small>
-            </h1>
-
             <!-- First Blog Post -->
             <?php
             if (empty($_GET['search'])) {
-                $query = "SELECT * FROM posts";
+                $query = "SELECT * FROM posts WHERE post_status = 'published'";
             } else if (!empty($_GET['search'])) {
                 $search_query = $_GET['search'];
-                $query = "SELECT * FROM posts WHERE post_tag LIKE '%$search_query%'";
+                $query = "SELECT * FROM posts WHERE post_tag LIKE '%$search_query%' AND post_status = 'published'";
             }
             $posts_result = mysqli_query($db, $query);
             if (!$posts_result) {
                 echo mysqli_error($db);
             } else if ($posts_result) {
                 $counter = mysqli_num_rows($posts_result);
-                if ($counter == 0) {
+                if ($counter == 0  && !empty($_GET['search'])) {
                     echo "<h1>No Post Found</h2>";
                 } else if ($counter >= 1) {
                     while ($row = mysqli_fetch_assoc($posts_result)) {
@@ -56,7 +51,7 @@
                         <hr>
                         <a href="<?= $post_premalink ?>"><img style="width: 100%; object-fit: cover;" class="img-responsive" src="<?= trim(htmlentities($upload_image_url . $post_image, ENT_QUOTES)) ?>" alt="image"></a>
                         <hr>
-                        <p><?= trim(htmlentities($post_content, ENT_QUOTES)) ?></p>
+                        <p><?= html_entity_decode($post_content, ENT_QUOTES) ?></p>
                         <a class="btn btn-primary" href="<?= $post_premalink ?>">Read More <span class="glyphicon glyphicon-chevron-right"></span></a>
 
                         <hr>

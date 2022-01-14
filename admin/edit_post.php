@@ -48,15 +48,14 @@ if (_verify_nonces() !== true) {
     if (isset($_POST['update_post'])) {
         $post_title = $_POST['post_title'];
         $post_category = $_POST['post_category'];
-        $post_author = $_POST['post_author'];
         $post_image = $_FILES['post_image'];
         $post_image_allowed_type = ['image/png', 'image/jpg', 'image/jpeg', 'image/gif']; //image allowed types
         $post_tmp_folder = $_FILES['post_image']['tmp_name']; //temp folder
-        $post_content = $_POST['post_content'];
+        $post_content = sanitize_op( $_POST['post_content'] );
         $post_tag = $_POST['post_tag'];
         $post_status = $_POST['post_status'];
         $post_date = date('d-m-y');
-        $post_data_required = ['post_title' => $post_title, 'post_author' => $post_author]; //required post data
+        $post_data_required = ['post_title' => $post_title]; //required post data
         $post_error = [];
         $post_error_massage = "This field is empty or something went wrong please try again";
         // print_r($post_data_required);
@@ -138,13 +137,13 @@ if (_verify_nonces() !== true) {
         if (empty($post_error)) {
             $post_status = in_array($post_status, $post_publish_option) ? $post_status : $post_publish_option[0];
             if ($post_image['size'] == 0) $post_image_name = $ex_post_image;
-            $post_db_query = "UPDATE posts SET post_category_id = ?, post_title = ?, post_author = ?, post_date = ?, post_image = ?, post_content = ?, post_tag = ?, post_status = ? 
+            $post_db_query = "UPDATE posts SET post_category_id = ?, post_title = ?, post_date = ?, post_image = ?, post_content = ?, post_tag = ?, post_status = ? 
             WHERE post_id = ?";
             $stmt = $db->stmt_init();
             if ($stmt->prepare($post_db_query)) {
-                $stmt->bind_param('isssssssi', $post_category, $post_title, $post_author, $post_date, $post_image_name, $post_content, $separate_post_tag, $post_status, $ex_post_id);
+                $stmt->bind_param('issssssi', $post_category, $post_title, $post_date, $post_image_name, $post_content, $separate_post_tag, $post_status, $ex_post_id);
                 if ($stmt->execute()) {
-                    $post_message = "Post updated sucessfully";
+                    $post_message = "Post updated sucessfully " . "<a href=". $site_url . "post.php?post_id=" . sanitize_op($post_id) . ">View</a>";
                     if( session_status() !== PHP_SESSION_ACTIVE) {
                         session_start();
                     }
@@ -171,6 +170,16 @@ if (_verify_nonces() !== true) {
     </div>
     <?php
        unset( $_SESSION['update_post'] );
+    }?>
+    
+    <?php 
+   if( isset( $_SESSION['page_added'] ) )  { ?>
+    <div class="alert alert-success" role="alert">
+      <?= "Post Added successfully " . "<a href=". $site_url . "post.php?post_id=" . sanitize_op($_SESSION['page_added_id']) . ">View</a>" ?>
+    </div>
+    <?php
+       unset( $_SESSION['page_added'] );
+       unset( $_SESSION['page_added_id'] );
     }?>
     <form action="<?= $site_url . "admin/posts.php?source=edit_post&post_id={$ex_post_id}&nonces=$nonces" ?>" method="post" enctype="multipart/form-data">
         <div class="form-group">
@@ -203,16 +212,6 @@ if (_verify_nonces() !== true) {
             </select>
         </div>
         <div class="form-group">
-            <label for="post_author">Post Author</label>
-            <?php
-            if (isset($post_error) && in_array('post_author', $post_error)) { ?>
-                <div class="alert alert-danger" role="alert"><?= $post_error_massage ?></div>
-            <?php } ?>
-            <input class="form-control" name="post_author" id="post_author" type="text" <?php 
-                $current_post_author = isset( $post_author ) ? $post_author : $ex_post_author;
-                echo 'value="' . trim(htmlentities($current_post_author, ENT_QUOTES)) . '"' ?>>
-        </div>
-        <div class="form-group">
             <?php
             if (isset($ex_post_image) && !empty($ex_post_image)) { ?>
                 <img style="height: 100px; object-fit: cover;" class="img-responsive" src="<?= $upload_image_url . trim(htmlentities($ex_post_image, ENT_QUOTES)) ?>" alt="image">
@@ -232,7 +231,7 @@ if (_verify_nonces() !== true) {
             <label for="post_content">Content</label>
             <textarea class="form-control" name="post_content" id="post_content"><?php 
             $current_post_content = isset( $post_content ) ? $post_content : $ex_post_content;
-            echo  trim(htmlentities($current_post_content, ENT_QUOTES)) ?></textarea>
+            echo html_entity_decode($current_post_content) ?></textarea>
         </div>
         <div class="form-group">
             <label for="post_tag">Post Tag (seprate tags with whitespace)</label>

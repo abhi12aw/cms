@@ -16,11 +16,11 @@ $post_publish_option = _get_post_publish_options();
 if (isset($_POST['add_post'])) {
     $post_title = $_POST['post_title'];
     $post_category = $_POST['post_category'];
-    $post_author = $_POST['post_author'];
+    $post_author = _get_username(_get_current_user_id());
     $post_image = $_FILES['post_image'];
     $post_image_allowed_type = ['image/png', 'image/jpg', 'image/jpeg', 'image/gif'];
     $post_tmp_folder = $_FILES['post_image']['tmp_name'];
-    $post_content = $_POST['post_content'];
+    $post_content = sanitize_op($_POST['post_content']);
     $post_tag = $_POST['post_tag'];
     $post_status = $_POST['post_status'];
     $post_date = date('d-m-y');
@@ -100,14 +100,23 @@ if (isset($_POST['add_post'])) {
         }
     }
     if (empty($post_error)) {
+        if( $_FILES['post_image']['size'] == 0 )  {
+            $post_image_name = '';
+        }
         $post_status = in_array($post_status, $post_publish_option) ? $post_status : $post_publish_option[0];
         $post_db_query = "INSERT INTO posts ( post_category_id, post_title, post_author, post_date, post_image, post_content, post_tag, post_status)
         VALUES ( ?, ?, ?, ?, ?, ?, ?, ? )";
         $stmt = $db->stmt_init();
         if ($stmt->prepare($post_db_query)) {
             $stmt->bind_param('isssssss', $post_category, $post_title, $post_author, $post_date, $post_image_name, $post_content, $separate_post_tag, $post_status);
-            if ($stmt->execute()) {
-                $post_message = "Post added sucessfully";
+            if ($stmt->execute() && mysqli_affected_rows( $db ) > 0) {
+                $post_id = mysqli_insert_id( $db );
+                $nonces = _create_nonces();
+                $location = $site_url . "admin/posts.php?source=edit_post&post_id=$post_id&nonces=$nonces";
+                $_SESSION['page_added'] = true;
+                $_SESSION['page_added_id'] = $post_id;
+                header( "Location: $location" );
+                exit;
             } else {
                 echo $stmt->error;
             }
@@ -150,14 +159,6 @@ if (isset($_POST['add_post'])) {
         </select>
     </div>
     <div class="form-group">
-        <label for="post_author">Post Author</label>
-        <?php
-        if (isset($post_error) && in_array('post_author', $post_error)) { ?>
-            <div class="alert alert-danger" role="alert"><?= $post_error_massage ?></div>
-        <?php } ?>
-        <input class="form-control" name="post_author" id="post_author" type="text" <?php if (isset($post_author)) echo 'value="' . trim(htmlentities($post_author, ENT_QUOTES)) . '"' ?>>
-    </div>
-    <div class="form-group">
         <label for="post_image">Image</label>
         <?php
         if (isset($post_error) && array_key_exists('post_image', $post_error)) { ?>
@@ -171,7 +172,7 @@ if (isset($_POST['add_post'])) {
             <div class="alert alert-danger" role="alert"><?= $post_error_massage ?></div>
         <?php } ?>
         <label for="post_content">Content</label>
-        <textarea class="form-control" name="post_content" id="post_content"><?php if (isset($post_content)) echo  trim(htmlentities($post_content, ENT_QUOTES)) ?></textarea>
+        <textarea class="form-control" name="post_content" id="post_content"><?php if (isset($post_content)) echo html_entity_decode($post_content, ENT_QUOTES) ?></textarea>
     </div>
     <div class="form-group">
         <label for="post_tag">Post Tag (seprate tags with whitespace)</label>
@@ -190,5 +191,5 @@ if (isset($_POST['add_post'])) {
             <?php } ?>
         </select>
     </div>
-    <input class="btn btn-primary" name="add_post" type="submit" value="Add Post">
+    <input style="margin-top: 20px" class="btn btn-primary" name="add_post" type="submit" value="Add Post">
 </form>
