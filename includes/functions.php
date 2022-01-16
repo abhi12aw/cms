@@ -455,7 +455,7 @@ function _get_users( int $id = null )
 
 
 /**
- * check to see if username is avalible or not 
+ * check to see if username is avalible or not( in case insensitve manner )
  * @param mixed $username
  * @return true|false
  */
@@ -470,7 +470,7 @@ function _is_username_available($username)
         $all_username[] = $row;
     }
     foreach ($all_username as $user) {
-        if ($user[0] == $username) {
+        if (strcasecmp($user[0], $username) == 0 ) {
             return false;
         }
     }
@@ -535,3 +535,47 @@ function _get_current_user_id()  {
     }
     return false;
 }
+
+/**
+ * Give all the available roles
+ * @return array of roles
+ */
+function _get_roles()  {
+  $roles = ['subscriber', 'admin'];
+  return $roles;
+}
+
+
+/**
+ * get the user role 
+ * @param int $id of the user
+ * @return string of role
+ */
+function _get_user_role( int $id )  {
+    if( _is_user( $id ) )  {
+       global $db;
+       $query = "SELECT user_role FROM users WHERE user_id = ?";
+       $stmt = $db->stmt_init();
+       $stmt->prepare( $query );
+       $stmt->bind_param( 'i', $id ); 
+       $stmt->execute();
+       $result = $stmt->get_result();
+       while( $row = mysqli_fetch_row( $result ) )  {
+           return $row[0];
+       }
+    }
+    return false;
+}
+
+
+/**
+ * check to see if the current user is admin or not
+ * @return bool
+ */
+
+ function _is_admin() {
+     if( _is_logged_in() && _get_user_role( _get_current_user_id() == 'admin' ) )  {
+         return true;
+     }
+     return false;
+ }

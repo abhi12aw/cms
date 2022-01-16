@@ -14,13 +14,29 @@
 
             <!-- First Blog Post -->
             <?php
+            ///post limit
+            $post_limit = 2;
+            $post_page = 0;
+            if( isset( $_GET['page'] ) && $_GET['page'] > 0 && is_numeric( $_GET['page'] ))  {
+              $post_page =  $_GET['page'];
+            }
+            $post_from = (($post_page * $post_limit) - $post_limit);
+            if( $post_from < 0 )  {
+                $post_from = 0;
+            }
             if (empty($_GET['search'])) {
-                $query = "SELECT * FROM posts WHERE post_status = 'published'";
+                $query = "SELECT * FROM posts WHERE post_status = 'published' LIMIT $post_from, $post_limit";
+                $total_post_count_query =  "SELECT * FROM posts WHERE post_status = 'published'";
             } else if (!empty($_GET['search'])) {
                 $search_query = $_GET['search'];
-                $query = "SELECT * FROM posts WHERE post_tag LIKE '%$search_query%' AND post_status = 'published'";
+                $query = "SELECT * FROM posts WHERE post_tag LIKE '%$search_query%' AND post_status = 'published' LIMIT $post_from, $post_limit ";
+                $total_post_count_query = "SELECT * FROM posts WHERE post_tag LIKE '%$search_query%' AND post_status = 'published'";
             }
+            $total_post_count_result = mysqli_query( $db ,$total_post_count_query );
             $posts_result = mysqli_query($db, $query);
+            $post_count = mysqli_num_rows($total_post_count_result);
+            $post_count = ceil($post_count / $post_limit);
+            echo $post_count;
             if (!$posts_result) {
                 echo mysqli_error($db);
             } else if ($posts_result) {
@@ -59,6 +75,14 @@
                 }
             }
             ?>
+            <?php if (!($post_count <= 1)) { ?>
+                <ul class="pagination">
+                    <?php
+                    for ($i = 2; $i <= $post_count; $i++) { ?>
+                        <li><a href="<?= _current_page() . "?page=$i" ?>"><?= $i ?></a></li>
+                    <?php } ?>
+                </ul>
+            <?php } ?>
 
         </div>
 

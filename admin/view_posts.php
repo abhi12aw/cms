@@ -16,38 +16,59 @@ if (!defined('POST_PAGE_PART')) {
 <?php
 
 if (isset($_POST['bulk_select'])) {
-    $action = ['published' => 'Published', 'draft' => 'Draft', 'delete' => 'Delete'];
-    // _print_r( $_POST );
-    if( ( isset($_POST['bulk_select_action']) && in_array( $_POST['bulk_select_action'], $action ) ) && ( isset( $_POST['checkItem'] ) && $_POST['checkItem'] != '' ) ) {
+    ///Allowed action
+    $action = ['published' => 'Published', 'draft' => 'Draft', 'delete' => 'Delete', 'clone' => 'Clone'];
+    // _print_r($_POST);
+    if ((isset($_POST['bulk_select_action']) && in_array($_POST['bulk_select_action'], $action)) && (isset($_POST['checkItem']) && $_POST['checkItem'] != '')) {
         $bulk_action = strtolower($_POST['bulk_select_action']);
         $bulk_query = '';
         $opration_list = [];
         $stmt = $db->stmt_init();
-        switch( $bulk_action )  {
+        switch ($bulk_action) {
             case 'published':
                 $bulk_query = "UPDATE posts SET post_status = 'published' WHERE post_id = ?";
                 break;
             case 'draft':
                 $bulk_query = "UPDATE posts SET post_status = 'draft' WHERE post_id = ?";
-            break;
+                break;
             case 'delete':
                 $bulk_query = "DELETE FROM posts WHERE post_id = ?";
-            break;
+                break;
+            case 'clone':
+                $bulk_query = "INSERT INTO posts (post_category_id, post_title, post_date, post_image, post_content, post_tag ) VALUES (?, ?, ?, ?, ?, ?)";
+                // echo "clone";
+                break;
         }
-        $stmt->prepare( $bulk_query );
-        foreach( $_POST['checkItem'] as $item )  {
-          $stmt->bind_param( 'i', $item );
-          $stmt->execute();
-          if( mysqli_affected_rows( $db ) > 0 )  {
-            $opration_list[$item] = 'true';
-          } else {
-            $opration_list[$item] = 'false';
-          }
-       }
-    //    _print_r( $opration_list );
+        $stmt->prepare($bulk_query);
+        foreach ($_POST['checkItem'] as $item) {
+            if ($bulk_action == 'clone') {
+                $clone_post = _get_post($item)[0];
+                $clone_post_category_id = $clone_post['post_category_id'];
+                $clone_post_title = $clone_post['post_title'];
+                $clone_post_date = date('d-m-y');
+                $clone_post_image = $clone_post['post_image'];
+                $clone_post_content = $clone_post['post_content'];
+                $clone_post_tag = $clone_post['post_tag'];
+                if (!empty($clone_post_tag)) {
+                    if (!preg_match('/,/', $clone_post_tag)) {
+                        $clone_post_tag = explode(' ', $clone_post_tag);
+                        $clone_post_tag = serialize($clone_post_tag);
+                    }
+                }
+                $stmt->bind_param('isssss', $clone_post_category_id, $clone_post_title, $clone_post_date, $clone_post_image, $clone_post_content, $clone_post_tag);
+            } elseif (in_array($_POST['bulk_select_action'], $action)) {
+                $stmt->bind_param('i', $item);
+            }
+            $stmt->execute();
+            if (mysqli_affected_rows($db) > 0) {
+                $opration_list[$item] = 'true';
+            } else {
+                $opration_list[$item] = 'false';
+            }
+        }
+        //    _print_r( $opration_list );
     }
 }
-
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
@@ -74,11 +95,12 @@ if (isset($_SESSION['delete_error'])) { ?>
                     <option value="Published">Published</option>
                     <option value="Draft">Draft</option>
                     <option value="Delete">Delete</option>
+                    <option value="Clone">Clone</option>
                 </select>
                 <span class="input-group-btn">
                     <input style="margin-left: -4px; z-index: 0;" class="btn btn-info" type="submit" value="Bulk Action" name="bulk_select">
                 </span>
-                <span  class="input-group-btn">
+                <span class="input-group-btn">
                     <a style="margin-left: 10px; border-radius: 5px; outline: 0px" class="btn btn-primary" href="<?= $site_url ?>admin/posts.php?source=add_post">Add New Post</a>
                 </span>
             </div>
@@ -120,7 +142,7 @@ if (isset($_SESSION['delete_error'])) { ?>
                     $post_content = $post['post_content'];
                     $post_tag = unserialize($post['post_tag']);
                     $post_comment = $post['post_comment_count'];
-                    $post_status = ucfirst( $post['post_status'] );
+                    $post_status = ucfirst($post['post_status']);
             ?>
                     <tr>
                         <td><input type="checkbox" id="checkItem" name="checkItem[]" value="<?= sanitize_op($post_id) ?>"></td>
