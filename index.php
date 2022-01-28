@@ -36,7 +36,7 @@
             $posts_result = mysqli_query($db, $query);
             $post_count = mysqli_num_rows($total_post_count_result);
             $post_count = ceil($post_count / $post_limit);
-            echo $post_count;
+            // echo $post_count;
             if (!$posts_result) {
                 echo mysqli_error($db);
             } else if ($posts_result) {
